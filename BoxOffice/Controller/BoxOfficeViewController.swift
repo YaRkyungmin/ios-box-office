@@ -9,14 +9,8 @@ import UIKit
 
 final class BoxOfficeViewController: UIViewController {
     private let boxOfficeManager = BoxOfficeManager()
-    private let collectionView: UICollectionView = {
-        let layout = UICollectionViewFlowLayout()
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        
-        return collectionView
-    }()
-    
+    private var dataSource: UICollectionViewDiffableDataSource<Section, DailyBoxOfficeData>!
+    private var collectionView: UICollectionView!
     private let activityIndicator: UIActivityIndicatorView = {
         let activityIndicator = UIActivityIndicatorView(style: .large)
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
@@ -24,12 +18,17 @@ final class BoxOfficeViewController: UIViewController {
         
         return activityIndicator
     }()
-
+    
+    enum Section {
+        case main
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupNavigation()
         setupCollectionView()
+        setupDataSource()
         setupRefreshControl()
         loadBoxOfficeData()
         
@@ -42,9 +41,31 @@ final class BoxOfficeViewController: UIViewController {
     }
     
     private func setupCollectionView() {
-        collectionView.dataSource = self
-        collectionView.delegate = self
+        let layout = createCollectionViewLayout()
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.backgroundColor = .systemBackground
         collectionView.register(BoxOfficeCollectionViewCell.self, forCellWithReuseIdentifier: BoxOfficeCollectionViewCell.identifier)
+        collectionView.dataSource = dataSource
+    }
+    
+    private func createCollectionViewLayout() -> UICollectionViewLayout {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalWidth(0.21))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalWidth(2.1))
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+        let section = NSCollectionLayoutSection(group: group)
+        return UICollectionViewCompositionalLayout(section: section)
+    }
+    
+    private func setupDataSource() {
+        dataSource = UICollectionViewDiffableDataSource<Section, DailyBoxOfficeData>(collectionView: collectionView) { collectionView, indexPath, dailyBoxOfficeData in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BoxOfficeCollectionViewCell.identifier, for: indexPath) as? BoxOfficeCollectionViewCell else {
+                return UICollectionViewCell()
+            }
+            cell.setupBoxOfficeData(dailyBoxOfficeData)
+            return cell
+        }
     }
     
     private func setupRefreshControl() {
@@ -70,7 +91,7 @@ final class BoxOfficeViewController: UIViewController {
             }
             
             DispatchQueue.main.async {
-                self.collectionView.reloadData()
+                self.updateCollectionViewData()
                 self.activityIndicator.stopAnimating()
             }
         }
@@ -92,39 +113,17 @@ final class BoxOfficeViewController: UIViewController {
             }
             
             DispatchQueue.main.async {
-                self.collectionView.reloadData()
+                self.updateCollectionViewData()
                 refresh.endRefreshing()
             }
         }
     }
-}
-
-// MARK: UICollectionViewDataSource
-extension BoxOfficeViewController: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return boxOfficeManager.dailyBoxOfficeDatas.count
-    }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BoxOfficeCollectionViewCell.identifier, for: indexPath) as? BoxOfficeCollectionViewCell else {
-            return BoxOfficeCollectionViewCell()
-        }
-        
-        let dailyBoxOfficeDatas = boxOfficeManager.dailyBoxOfficeDatas
-        
-        if !dailyBoxOfficeDatas.isEmpty {
-            let dailyBoxOfficeData = dailyBoxOfficeDatas[indexPath.item]
-            cell.setupBoxOfficeData(dailyBoxOfficeData)
-        }
-        
-        return cell
-    }
-}
-
-// MARK: UICollectionViewDelegateFlowLayout
-extension BoxOfficeViewController: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: collectionView.frame.width / 5)
+    private func updateCollectionViewData() {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, DailyBoxOfficeData>()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(boxOfficeManager.dailyBoxOfficeDatas, toSection: .main)
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
 }
 

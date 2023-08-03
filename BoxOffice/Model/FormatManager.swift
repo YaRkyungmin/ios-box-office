@@ -34,10 +34,14 @@ enum FormatManager {
         return dateFormatter.string(from: purposeDay)
     }
     
-    static func bringDecimalString(_ data: String) -> String? {
+    static func bringDecimalString(_ data: String) -> String {
         let numberData = Int(data)
         
-        return numberFormatter.string(for: numberData)
+        guard let formatNumber = numberFormatter.string(for: numberData) else {
+            return "..."
+        }
+        
+        return formatNumber
     }
 }
 

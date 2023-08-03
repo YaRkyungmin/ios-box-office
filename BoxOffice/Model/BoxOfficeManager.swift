@@ -13,7 +13,7 @@ final class BoxOfficeManager {
     private let networkManager = NetworkManager(urlSession: URLSession.shared)
     private let kobisKey = Bundle.main.object(forInfoDictionaryKey: NameSpace.kobisKey) as? String
     
-    var dailyBoxOfficeDatas: [DailyBoxOfficeData?] {
+    var dailyBoxOfficeDatas: [DailyBoxOfficeData] {
         guard let boxOffice else {
             return []
         }

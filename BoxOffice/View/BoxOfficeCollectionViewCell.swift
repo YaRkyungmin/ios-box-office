@@ -10,6 +10,14 @@ import UIKit
 final class BoxOfficeCollectionViewCell: UICollectionViewCell {
     static let identifier = "BoxOfficeCollectionViewCellID"
     
+    private let separatorView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .systemFill
+        
+        return view
+    }()
+    
     private let rankStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -110,12 +118,23 @@ extension BoxOfficeCollectionViewCell {
         contentView.addSubview(rankStackView)
         contentView.addSubview(movieInfomationStackView)
         contentView.addSubview(forwardImageView)
+        contentView.addSubview(separatorView)
     }
     
     private func setupConstraint() {
         setupRankStackVeiwConstraint()
         setupMovieInfomationStackViewConstraint()
         setupForwardImageViewConstraint()
+        setupSperatorViewConstraint()
+    }
+    
+    private func setupSperatorViewConstraint() {
+        NSLayoutConstraint.activate([
+            separatorView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            separatorView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            separatorView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            separatorView.heightAnchor.constraint(equalToConstant: 0.5)
+        ])
     }
     
     private func setupRankStackVeiwConstraint() {
